@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>丝西娜的酒馆 · 管理后台</title>
+<style>
+  :root{--gold:#e6c583;--gold-soft:#f0d9a8;--gold-dim:#b8934f;--wood:#6b4a2a;--bg:#100a06;--panel:#1b120b;--panel2:#241710;--line:rgba(230,197,131,.22);--text:#f0e2c6;--dim:#9c8560;--red:#d98a6a;--green:#8fcf9a}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:radial-gradient(ellipse at top,#1a1109,#0a0704 70%);color:var(--text);font-family:"PingFang SC","Microsoft YaHei",sans-serif;min-height:100vh}
+  a{color:var(--gold-soft)}
+  header.top{display:flex;align-items:center;justify-content:space-between;padding:16px 24px;border-bottom:1px solid var(--line);background:linear-gradient(180deg,#241710,#160e08)}
+  header.top h1{font-family:"KaiTi","STKaiti",serif;font-size:22px;letter-spacing:3px;color:var(--gold)}
+  header.top .sub{font-size:12px;color:var(--dim);letter-spacing:2px;margin-top:3px}
+  .git-badge{font-size:12px;padding:5px 12px;border:1px solid var(--line);border-radius:20px;color:var(--gold-soft)}
+  .git-badge.dirty{color:#ffd9a0;border-color:#7a5a2a}
+  .git-badge.clean{color:var(--green)}
+  .git-badge.off{color:var(--red);border-color:#7a3a2a}
+  .wrap{max-width:1180px;margin:0 auto;padding:20px 24px 60px}
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-bottom:22px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 18px}
+  .card .n{font-size:30px;font-weight:700;color:var(--gold);font-family:"KaiTi",serif}
+  .card .l{font-size:12px;color:var(--dim);letter-spacing:2px;margin-top:4px}
+  .tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}
+  .tab{padding:9px 18px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--text);cursor:pointer;font-size:14px;letter-spacing:1px;transition:.15s}
+  .tab:hover{border-color:var(--gold-dim)}
+  .tab.active{background:linear-gradient(180deg,#5a3d22,#3a2513);color:var(--gold);border-color:var(--gold)}
+  .panel{display:none;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px}
+  .panel.active{display:block}
+  .sec-title{font-family:"KaiTi",serif;font-size:18px;color:var(--gold);letter-spacing:2px;margin-bottom:14px;border-bottom:1px solid var(--line);padding-bottom:8px}
+  .btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border:1px solid var(--gold-dim);border-radius:8px;background:rgba(230,197,131,.08);color:var(--gold-soft);cursor:pointer;font-size:13px;letter-spacing:1px;transition:.15s}
+  .btn:hover{background:rgba(230,197,131,.18);color:#ffe9bd}
+  .btn.primary{background:linear-gradient(180deg,#5a3d22,#3a2513);border-color:var(--gold);color:var(--gold)}
+  .btn.danger{border-color:#7a3a2a;color:#e8a088;background:rgba(180,60,40,.1)}
+  .btn.sm{padding:5px 11px;font-size:12px}
+  .row{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end}
+  .field{flex:1;min-width:160px;margin-bottom:12px}
+  .field label{display:block;font-size:12px;color:var(--dim);letter-spacing:1px;margin-bottom:5px}
+  input,select,textarea{width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:8px;color:var(--text);padding:9px 11px;font-size:14px;font-family:inherit}
+  textarea{resize:vertical;min-height:120px;line-height:1.7}
+  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--gold)}
+  .list{display:flex;flex-direction:column;gap:10px;margin-top:16px}
+  .item{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:13px 15px;display:flex;justify-content:space-between;align-items:center;gap:12px}
+  .item .meta{font-size:12px;color:var(--dim);margin-top:3px}
+  .item .acts{display:flex;gap:8px;flex:none}
+  .pill{display:inline-block;font-size:11px;padding:2px 9px;border:1px solid var(--line);border-radius:12px;color:var(--gold-soft);margin-left:6px}
+  .toolbar{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:6px;flex-wrap:wrap}
+  .filter{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  iframe.prev{width:100%;height:560px;border:1px solid var(--line);border-radius:12px;background:#070503}
+  .log{background:#0b0704;border:1px solid var(--line);border-radius:10px;padding:14px;font-family:Consolas,monospace;font-size:12.5px;line-height:1.7;color:#cdbf9a;white-space:pre-wrap;max-height:320px;overflow:auto;margin-top:12px}
+  .log .ok{color:var(--green)} .log .err{color:var(--red)}
+  .msg{font-size:13px;margin-top:10px;padding:9px 12px;border-radius:8px}
+  .msg.ok{background:rgba(143,207,154,.12);color:var(--green);border:1px solid rgba(143,207,154,.3)}
+  .msg.err{background:rgba(217,138,106,.12);color:var(--red);border:1px solid rgba(217,138,106,.3)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+  @media(max-width:760px){.grid2{grid-template-columns:1fr}}
+  .hint{font-size:12px;color:var(--dim);margin-top:6px;line-height:1.6}
+  .kv{font-size:12.5px;color:var(--dim);margin:4px 0}
+  .kv b{color:var(--gold-soft);font-weight:600}
+</style>
+</head>
+<body>
+<header class="top">
+  <div>
+    <h1>🍷 丝西娜的酒馆 · 管理后台</h1>
+    <div class="sub">栏目与文章维护 · 一键生成 · 同步 GitHub</div>
+  </div>
+  <div id="gitBadge" class="git-badge off">Git：未配置</div>
+</header>
+
+<div class="wrap">
+  <div class="cards" id="cards"></div>
+
+  <div class="tabs">
+    <div class="tab active" data-tab="cat">栏目管理</div>
+    <div class="tab" data-tab="post">文章管理</div>
+    <div class="tab" data-tab="home">首页台词</div>
+    <div class="tab" data-tab="preview">站点预览</div>
+    <div class="tab" data-tab="git">GitHub 同步</div>
+  </div>
+
+  <!-- 栏目管理 -->
+  <div class="panel active" id="tab-cat">
+    <div class="toolbar">
+      <div class="sec-title" style="border:0;margin:0;padding:0">栏目（右侧游戏菜单的分类入口）</div>
+      <button class="btn primary sm" id="newCatBtn">+ 新增栏目</button>
+    </div>
+    <div class="grid2">
+      <div>
+        <div class="list" id="catList"></div>
+      </div>
+      <div>
+        <div class="sec-title" id="catFormTitle">栏目编辑</div>
+        <div class="row">
+          <div class="field"><label>栏目 ID（英文，用于网址）</label><input id="catId" placeholder="如 zixun"></div>
+        </div>
+        <div class="row">
+          <div class="field"><label>显示名称</label><input id="catName" placeholder="如 咨询"></div>
+          <div class="field" style="max-width:150px"><label>图标</label>
+            <select id="catIcon"><option value="scroll">卷轴 scroll</option><option value="mug">酒杯 mug</option><option value="home">酒馆 home</option></select>
+          </div>
+        </div>
+        <div class="field"><label>描述</label><input id="catDesc" placeholder="菜单/列表下的小字"></div>
+        <div class="field"><label>开场白（每行一句，进栏目页时丝西娜会说）</label>
+          <div style="display:flex;gap:8px;align-items:center;margin-bottom:6px">
+            <button class="btn sm" type="button" onclick="insertLink('catIntro')">🔗 插入链接</button>
+            <span class="hint" style="margin:0">可用 [文字](网址)，如 [GitHub](https://github.com)</span>
+          </div>
+          <textarea id="catIntro" placeholder="第一行&#10;第二行"></textarea></div>
+        <div style="display:flex;gap:10px">
+          <button class="btn primary" id="saveCatBtn">保存栏目</button>
+          <button class="btn" id="resetCatBtn">清空</button>
+        </div>
+        <div id="catMsg"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 文章管理 -->
+  <div class="panel" id="tab-post">
+    <div class="toolbar">
+      <div class="filter">
+        <div class="sec-title" style="border:0;margin:0;padding:0">文章</div>
+        <select id="postFilter" style="width:auto"><option value="">全部栏目</option></select>
+      </div>
+      <button class="btn primary sm" id="newPostBtn">+ 新增文章</button>
+    </div>
+    <div class="grid2">
+      <div><div class="list" id="postList"></div></div>
+      <div>
+        <div class="sec-title" id="postFormTitle">文章编辑</div>
+        <div class="row">
+          <div class="field" style="max-width:46%"><label>文章 ID（英文）</label><input id="postId" placeholder="my-post"></div>
+          <div class="field" style="max-width:46%"><label>所属栏目</label><select id="postCat"></select></div>
+        </div>
+        <div class="row">
+          <div class="field"><label>标题</label><input id="postTitle" placeholder="文章标题"></div>
+          <div class="field" style="max-width:170px"><label>日期</label><input id="postDate" type="date"></div>
+        </div>
+        <div class="field"><label>正文（每行一段，会作为丝西娜的台词逐字打出）</label>
+          <div style="display:flex;gap:8px;align-items:center;margin-bottom:6px">
+            <button class="btn sm" type="button" onclick="insertLink('postLines')">🔗 插入链接</button>
+            <span class="hint" style="margin:0">可用 [文字](网址)，如 [GitHub](https://github.com)</span>
+          </div>
+          <textarea id="postLines" placeholder="第一段。&#10;第二段。"></textarea></div>
+        <div style="display:flex;gap:10px">
+          <button class="btn primary" id="savePostBtn">保存文章</button>
+          <button class="btn" id="resetPostBtn">清空</button>
+        </div>
+        <div id="postMsg"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 首页台词 -->
+  <div class="panel" id="tab-home">
+    <div class="sec-title">首页台词（打开网站时丝西娜逐句说）</div>
+    <div class="row">
+      <div class="field" style="max-width:320px"><label>站点标题</label><input id="siteTitle" placeholder="丝西娜的酒馆"></div>
+      <div class="field" style="max-width:200px"><label>老板娘名字</label><input id="siteOwner" placeholder="丝西娜"></div>
+    </div>
+    <div class="field"><label>首页台词（每行一句）</label>
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:6px">
+        <button class="btn sm" type="button" onclick="insertLink('homeLines')">🔗 插入链接</button>
+        <span class="hint" style="margin:0">可用 [文字](网址)，如 [GitHub](https://github.com)</span>
+      </div>
+      <textarea id="homeLines" style="min-height:200px"></textarea></div>
+    <button class="btn primary" id="saveHomeBtn">保存首页与站点信息</button>
+    <div id="homeMsg"></div>
+  </div>
+
+  <!-- 站点预览 -->
+  <div class="panel" id="tab-preview">
+    <div class="toolbar">
+      <div class="sec-title" style="border:0;margin:0;padding:0">站点预览</div>
+      <div style="display:flex;gap:10px">
+        <button class="btn" id="rebuildBtn">🔄 重新生成站点</button>
+        <button class="btn" id="refreshPrevBtn">刷新预览</button>
+      </div>
+    </div>
+    <div class="hint">修改内容后，先点「重新生成站点」再「刷新预览」。预览内嵌本地文件，无需额外服务器。</div>
+    <div id="rebuildMsg"></div>
+    <iframe class="prev" id="prevFrame" src="/site/index.html"></iframe>
+  </div>
+
+  <!-- GitHub 同步 -->
+  <div class="panel" id="tab-git">
+    <div class="sec-title">GitHub 同步（一键把整个项目推送到 GitHub）</div>
+    <div class="grid2">
+      <div>
+        <div class="field"><label>远程仓库地址（SSH 格式推荐）</label><input id="repoUrl" placeholder="git@github.com:DimDream/Stheno.git"></div>
+        <div class="row">
+          <div class="field" style="max-width:140px"><label>分支</label><input id="gitBranch" value="main"></div>
+          <div class="field"><label>SSH 私钥路径</label><input id="gitKey" placeholder="G:/moumou_deploy/id_ed25519"></div>
+        </div>
+        <div style="display:flex;gap:10px">
+          <button class="btn" id="saveGitCfgBtn">保存配置</button>
+          <button class="btn primary" id="syncBtn">🚀 一键同步到 GitHub</button>
+        </div>
+        <div id="gitMsg"></div>
+      </div>
+      <div>
+        <div class="sec-title" style="font-size:15px">当前仓库状态</div>
+        <div id="gitState"></div>
+      </div>
+    </div>
+    <div class="sec-title" style="font-size:15px;margin-top:18px">同步日志</div>
+    <div class="log" id="gitLog">尚未同步。</div>
+    <div class="hint" style="margin-top:12px">
+      使用说明：<br>
+      1. 在 GitHub 上新建一个<strong>空仓库</strong>（如 Stheno），把其 SSH 地址填到上方（格式 git@github.com:用户名/仓库.git）。<br>
+      2. 确保本机 SSH 公钥已添加到 GitHub 账户（本项目复用 G:/moumou_deploy/id_ed25519）。<br>
+      3. 点「一键同步」，首次会自动 git init 并提交、推送；之后每次点都会增量提交推送。
+    </div>
+  </div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+let STATE = {};
+
+async function api(method, path, body){
+  const opt = {method, headers:{"Content-Type":"application/json"}};
+  if(body !== undefined) opt.body = JSON.stringify(body);
+  const r = await fetch(path, opt);
+  try { return await r.json(); } catch(e){ return {ok:false, error:"响应解析失败"}; }
+}
+
+async function load(){
+  STATE = await api("GET","/api/state");
+  renderCards(); renderCatList(); renderPostList(); renderHome(); renderGit();
+  const badge = $("gitBadge");
+  const g = STATE.git||{};
+  if(!g.initialized || !g.remote){ badge.className="git-badge off"; badge.textContent="Git：未配置"; }
+  else if(g.dirty || g.ahead>0){ badge.className="git-badge dirty"; badge.textContent="Git：有改动待同步"; }
+  else { badge.className="git-badge clean"; badge.textContent="Git：已同步"; }
+}
+
+function renderCards(){
+  const c = STATE.categories||[], p = STATE.posts||[];
+  const cards = [
+    ["站点标题", STATE.site?.title||"—"],
+    ["栏目数", c.length],
+    ["文章数", p.length],
+    ["Git 状态", (STATE.git?.initialized? (STATE.git?.dirty?"有改动":"已同步") :"未初始化")],
+  ];
+  $("cards").innerHTML = cards.map(([l,n])=>`<div class="card"><div class="n">${n}</div><div class="l">${l}</div></div>`).join("");
+}
+
+/* ---------- 栏目 ---------- */
+function renderCatList(){
+  const c = STATE.categories||[];
+  const count = id => (STATE.posts||[]).filter(p=>p.cat===id).length;
+  $("catList").innerHTML = c.length? c.map(cat=>`
+    <div class="item">
+      <div><div><b style="color:var(--gold)">${esc(cat.name)}</b><span class="pill">${esc(cat.id)}</span><span class="pill">${count(cat.id)} 篇</span></div>
+      <div class="meta">${esc(cat.desc||"")}</div></div>
+      <div class="acts">
+        <button class="btn sm" onclick="editCat('${cat.id}')">编辑</button>
+        <button class="btn sm danger" onclick="delCat('${cat.id}')">删除</button>
+      </div>
+    </div>`).join("") : `<div class="hint">还没有栏目，点右上角「新增栏目」。</div>`;
+}
+function editCat(id){
+  const cat = (STATE.categories||[]).find(c=>c.id===id); if(!cat) return;
+  $("catId").value = cat.id; $("catName").value = cat.name;
+  $("catIcon").value = cat.icon||"mug"; $("catDesc").value = cat.desc||"";
+  $("catIntro").value = ((STATE.cat_intro||{})[id]||[]).join("\n");
+  $("catFormTitle").textContent = "编辑栏目：" + cat.name;
+}
+function resetCat(){ $("catId").value=""; $("catName").value=""; $("catIcon").value="mug"; $("catDesc").value=""; $("catIntro").value=""; $("catFormTitle").textContent="栏目编辑"; }
+async function saveCat(){
+  const id = $("catId").value.trim(); if(!id){ return showMsg("catMsg","请填写栏目 ID（英文）","err"); }
+  const body = {id, name:$("catName").value.trim()||id, icon:$("catIcon").value,
+    desc:$("catDesc").value, intro:$("catIntro").value.split("\n").map(s=>s.trim()).filter(Boolean)};
+  const r = await api("POST","/api/category",body);
+  showMsg("catMsg", r.ok? "已保存栏目 ✔":"保存失败："+(r.error||""), r.ok?"ok":"err");
+  if(r.ok){ resetCat(); await load(); }
+}
+async function delCat(id){
+  if(!confirm("删除栏目「"+id+"」会同时删除其下所有文章，确定？")) return;
+  const r = await api("DELETE","/api/category",{id});
+  showMsg("catMsg", r.ok? `已删除（连带 ${r.removed_posts} 篇文章）✔`:"删除失败","ok");
+  if(r.ok) await load();
+}
+
+/* ---------- 文章 ---------- */
+function fillCatSelect(){
+  const opts = (STATE.categories||[]).map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join("");
+  $("postCat").innerHTML = opts || `<option value="">（先建栏目）</option>`;
+  $("postFilter").innerHTML = `<option value="">全部栏目</option>` + opts;
+}
+function renderPostList(){
+  fillCatSelect();
+  const f = $("postFilter").value;
+  let posts = STATE.posts||[];
+  if(f) posts = posts.filter(p=>p.cat===f);
+  posts = posts.slice().sort((a,b)=> (b.date||"").localeCompare(a.date||""));
+  const catName = id => ((STATE.categories||[]).find(c=>c.id===id)||{}).name || id;
+  $("postList").innerHTML = posts.length? posts.map(p=>`
+    <div class="item">
+      <div><div><b style="color:var(--gold)">${esc(p.title)}</b><span class="pill">${esc(catName(p.cat))}</span></div>
+      <div class="meta">${esc(p.date||"")} · ${(p.lines||[]).length} 段 · ${esc(p.id)}</div></div>
+      <div class="acts">
+        <button class="btn sm" onclick="editPost('${p.id}')">编辑</button>
+        <button class="btn sm danger" onclick="delPost('${p.id}')">删除</button>
+      </div>
+    </div>`).join("") : `<div class="hint">该栏目下还没有文章。</div>`;
+}
+function editPost(id){
+  const p = (STATE.posts||[]).find(x=>x.id===id); if(!p) return;
+  $("postId").value=p.id; $("postCat").value=p.cat; $("postTitle").value=p.title||"";
+  $("postDate").value=p.date||""; $("postLines").value=(p.lines||[]).join("\n");
+  $("postFormTitle").textContent="编辑文章："+p.title;
+}
+function resetPost(){ $("postId").value=""; $("postCat").value=""; $("postTitle").value=""; $("postDate").value=""; $("postLines").value=""; $("postFormTitle").textContent="文章编辑"; }
+async function savePost(){
+  const id = $("postId").value.trim(); if(!id){ return showMsg("postMsg","请填写文章 ID（英文）","err"); }
+  const body = {id, cat:$("postCat").value, title:$("postTitle").value, date:$("postDate").value,
+    lines:$("postLines").value.split("\n").map(s=>s.trim()).filter(Boolean)};
+  const r = await api("POST","/api/post",body);
+  showMsg("postMsg", r.ok?"已保存文章 ✔":"保存失败："+(r.error||""), r.ok?"ok":"err");
+  if(r.ok){ resetPost(); await load(); }
+}
+async function delPost(id){
+  if(!confirm("确定删除文章「"+id+"」？")) return;
+  const r = await api("DELETE","/api/post",{id});
+  showMsg("postMsg", r.ok?"已删除 ✔":"删除失败","ok");
+  if(r.ok) await load();
+}
+
+/* ---------- 首页台词 ---------- */
+function renderHome(){
+  $("siteTitle").value = STATE.site?.title||"";
+  $("siteOwner").value = STATE.site?.owner||"";
+  $("homeLines").value = (STATE.home_lines||[]).join("\n");
+}
+async function saveHome(){
+  const body = {site:{title:$("siteTitle").value, owner:$("siteOwner").value}, home_lines:$("homeLines").value.split("\n").map(s=>s.trim()).filter(Boolean)};
+  const r = await api("POST","/api/site",body);
+  showMsg("homeMsg", r.ok?"已保存首页与站点信息 ✔":"保存失败","ok");
+  if(r.ok) await load();
+}
+
+/* ---------- 预览 ---------- */
+async function rebuild(){
+  $("rebuildMsg").innerHTML = `<div class="hint">正在生成…</div>`;
+  const r = await api("POST","/api/rebuild");
+  $("rebuildMsg").innerHTML = `<div class="msg ${r.ok?'ok':'err'}">${esc(r.message||r.error||'')}</div>`;
+  if(r.ok) refreshPrev();
+}
+function refreshPrev(){ $("prevFrame").src = "/site/index.html?t=" + Date.now(); }
+
+/* ---------- Git ---------- */
+function renderGit(){
+  const g = STATE.git||{}, cfg = STATE.git_cfg||{};
+  $("repoUrl").value = cfg.repo_url||""; $("gitBranch").value = cfg.branch||"main"; $("gitKey").value = cfg.ssh_key||"";
+  const rows = [
+    ["是否已初始化", g.initialized? "是":"否"],
+    ["远程地址", g.remote||"（未设置）"],
+    ["当前分支", g.branch||"—"],
+    ["工作区", g.dirty? "有未提交改动":"干净"],
+    ["待推送", g.ahead>0? (g.ahead+" 个提交"):"无"],
+    ["最近提交", g.last_commit||"—"],
+  ];
+  $("gitState").innerHTML = rows.map(([k,v])=>`<div class="kv"><b>${k}：</b>${esc(v)}</div>`).join("");
+}
+async function saveGitCfg(){
+  const body = {repo_url:$("repoUrl").value.trim(), branch:$("gitBranch").value.trim()||"main", ssh_key:$("gitKey").value.trim()};
+  const r = await api("POST","/api/git-config",body);
+  showMsg("gitMsg", r.ok?"已保存 Git 配置 ✔":"保存失败","ok");
+  if(r.ok) await load();
+}
+async function syncGit(){
+  $("syncBtn").disabled = true; $("gitLog").textContent = "正在同步…";
+  const r = await api("POST","/api/git-sync");
+  const cls = l => l.startsWith("ERR")? "err":"ok";
+  $("gitLog").innerHTML = (r.log||[]).map(l=>`<span class="${cls(l)}">${esc(l)}</span>`).join("\n");
+  showMsg("gitMsg", r.ok?"已同步到 GitHub ✔":"同步未完全成功，见日志","ok");
+  $("syncBtn").disabled = false;
+  await load();
+}
+
+function esc(s){ return String(s).replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c])); }
+function showMsg(id, text, type){ $(id).innerHTML = `<div class="msg ${type}">${esc(text)}</div>`; }
+
+/* ---------- 插入链接：[文字](网址) ---------- */
+function insertLink(id){
+  const ta = $(id); if(!ta) return;
+  const s = ta.selectionStart, e = ta.selectionEnd;
+  const sel = ta.value.substring(s, e);
+  const text = sel || "显示文字";
+  const url = window.prompt("请输入链接地址\n（http(s):// 开头，或站内相对路径如 /zixun.html）：", "https://");
+  if(url === null) return;
+  const token = "[" + text + "](" + url.trim() + ")";
+  ta.value = ta.value.slice(0, s) + token + ta.value.slice(e);
+  const pos = s + token.length;
+  ta.focus(); ta.setSelectionRange(pos, pos);
+}
+
+/* ---------- 事件 ---------- */
+document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>{
+  document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
+  document.querySelectorAll(".panel").forEach(x=>x.classList.remove("active"));
+  t.classList.add("active"); $("tab-"+t.dataset.tab).classList.add("active");
+});
+$("newCatBtn").onclick = resetCat;
+$("saveCatBtn").onclick = saveCat;
+$("resetCatBtn").onclick = resetCat;
+$("newPostBtn").onclick = resetPost;
+$("savePostBtn").onclick = savePost;
+$("resetPostBtn").onclick = resetPost;
+$("postFilter").onchange = renderPostList;
+$("saveHomeBtn").onclick = saveHome;
+$("rebuildBtn").onclick = rebuild;
+$("refreshPrevBtn").onclick = refreshPrev;
+$("saveGitCfgBtn").onclick = saveGitCfg;
+$("syncBtn").onclick = syncGit;
+
+load();
+</script>
+</body>
+</html>
