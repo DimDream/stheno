@@ -26,7 +26,7 @@ import subprocess
 import sys
 import mimetypes
 import urllib.parse
-from http.server import BaseHTTPRequestHandler, HTTPServer
+from http.server import BaseHTTPRequestHandler, HTTPServer, ThreadingHTTPServer
 
 # ---------------------------------------------------------------- 路径配置
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -214,6 +214,21 @@ class Handler(BaseHTTPRequestHandler):
     def log_message(self, *a):
         pass
 
+    def handle_error(self, request, client_address):
+        # 任何未捕获异常都返回 500 JSON，而不是让连接空响应（避免前端拿不到数据）
+        try:
+            import traceback
+            tb = traceback.format_exc()
+            body = json.dumps({"ok": False, "error": "服务器内部错误", "detail": tb[:800]},
+                              ensure_ascii=False).encode("utf-8")
+            request.send_response(500)
+            request.send_header("Content-Type", "application/json; charset=utf-8")
+            request.send_header("Content-Length", str(len(body)))
+            request.end_headers()
+            request.wfile.write(body)
+        except Exception:
+            pass
+
     def _send(self, code, body, ctype="application/json; charset=utf-8"):
         if isinstance(body, (dict, list)):
             body = json.dumps(body, ensure_ascii=False)
@@ -382,7 +397,7 @@ def main():
             port = int(sys.argv[1])
         except ValueError:
             pass
-    server = HTTPServer(("127.0.0.1", port), Handler)
+    server = ThreadingHTTPServer(("127.0.0.1", port), Handler)
     print("丝西娜的酒馆 · 管理后台已启动")
     print("  浏览器打开： http://localhost:%d" % port)
     print("  博客根目录： %s" % STHENO_DIR)
