@@ -1,6 +1,6 @@
 {
-  "repo_url": "https://github.com/DimDream/stheno.git",
+  "repo_url": "git@github.com:DimDream/stheno.git",
   "branch": "main",
-  "ssh_key": "G:/moumou_deploy/id_ed25519",
+  "ssh_key": "G:/stheno_deploy/id_ed25519",
   "remote": "origin"
 }
