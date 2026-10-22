@@ -616,6 +616,8 @@ def menu_html(prefix, cats):
 
 
 def post_list_html(prefix, cat, posts):
+    # 按发布日期倒序（最新在前）；日期为 ISO 格式时字典序即时间序
+    posts = sorted(posts, key=lambda p: p.get("date", ""), reverse=True)
     rows = []
     for p in posts:
         rows.append('<a class="post-item" href="' + prefix + 'posts/' + esc(p["id"]) + '.html"><span class="post-date">' + esc(p["date"]) + '</span><span class="post-title">' + esc(p["title"]) + '</span></a>')
