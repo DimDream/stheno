@@ -35,7 +35,7 @@ DATA_FILE = os.path.join(STHENO_DIR, "posts.json")
 BUILD_SCRIPT = os.path.join(STHENO_DIR, "build.py")
 ADMIN_UI = os.path.join(STHENO_DIR, "admin_ui.html")
 CFG_FILE = os.path.join(STHENO_DIR, ".stheno_admin.json")
-GIT_KEY = r"G:/moumou_deploy/id_ed25519"            # 复用的 GitHub SSH 私钥
+GIT_KEY = r"G:/stheno_deploy/id_ed25519"        # Stheno 专用的 GitHub SSH 私钥
 DEFAULT_PORT = 8800
 
 PYTHON = sys.executable
