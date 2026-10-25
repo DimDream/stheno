@@ -1,7 +1,18 @@
 {
   "site": {
     "title": "丝西娜的酒馆",
-    "owner": "丝西娜"
+    "owner": "丝西娜",
+    "theme": {
+      "gold": "#e6c583",
+      "gold_soft": "#f0d9a8",
+      "gold_dim": "#b8934f",
+      "text_dim": "#c9b394",
+      "bg": "#070503",
+      "bg_center": "#16100b",
+      "text": "#f5ead2",
+      "link": "#ffd98a",
+      "link_hover": "#fff0c8"
+    }
   },
   "home_lines": [
     "（门上的铜铃响了一声）欢迎，远道而来的旅人。",

@@ -22,8 +22,11 @@
 import io
 import json
 import os
+import shutil
 import subprocess
 import sys
+import time
+import base64
 import mimetypes
 import urllib.parse
 from http.server import BaseHTTPRequestHandler, HTTPServer, ThreadingHTTPServer
@@ -37,6 +40,11 @@ ADMIN_UI = os.path.join(STHENO_DIR, "admin_ui.html")
 CFG_FILE = os.path.join(STHENO_DIR, ".stheno_admin.json")
 GIT_KEY = r"G:/stheno_deploy/id_ed25519"        # Stheno 专用的 GitHub SSH 私钥
 DEFAULT_PORT = 8800
+
+# ---------------------------------------------------------------- 图片上传
+ALLOWED_IMAGES = ("背景.png", "丝西娜.png", "favicon.png")
+MAX_IMAGE_BYTES = 12 * 1024 * 1024          # 单张上限 12MB
+PNG_MAGIC = b"\x89PNG\r\n\x1a\n"
 
 PYTHON = sys.executable
 
@@ -358,6 +366,39 @@ class Handler(BaseHTTPRequestHandler):
             ok, log = sync_to_github()
             return self._send(200, {"ok": ok, "log": log, "git": get_git_state(load_cfg())})
 
+        if path == "/api/upload-image":
+            name = os.path.basename(str(body.get("name", "")))
+            if name not in ALLOWED_IMAGES:
+                return self._send(400, {"ok": False, "error": "不支持的图片：%s（仅限 背景.png / 丝西娜.png / favicon.png）" % name})
+            raw = body.get("data", "")
+            if isinstance(raw, str):
+                if raw.startswith("data:"):
+                    raw = raw.split(",", 1)[1] if "," in raw else ""
+                raw = raw.strip()
+            try:
+                content = base64.b64decode(raw or "")
+            except Exception:
+                return self._send(400, {"ok": False, "error": "图片数据解码失败"})
+            if not content:
+                return self._send(400, {"ok": False, "error": "图片数据为空"})
+            if len(content) > MAX_IMAGE_BYTES:
+                return self._send(400, {"ok": False, "error": "图片太大（上限 %.1f MB）" % (MAX_IMAGE_BYTES / 1048576.0)})
+            if not content.startswith(PNG_MAGIC):
+                return self._send(400, {"ok": False, "error": "仅支持 PNG 格式图片"})
+            img_dir = os.path.join(STHENO_DIR, "assets", "img")
+            if not os.path.isdir(img_dir):
+                os.makedirs(img_dir)
+            target = os.path.join(img_dir, name)
+            if os.path.exists(target):
+                try:
+                    shutil.copyfile(target, target + ".bak")
+                except Exception:
+                    pass
+            with io.open(target, "wb") as f:
+                f.write(content)
+            return self._send(200, {"ok": True, "size": len(content),
+                                    "url": "assets/img/" + name + "?t=" + str(int(time.time()))})
+
         if path == "/api/rebuild":
             ok, msg = rebuild_site()
             return self._send(200, {"ok": ok, "message": msg})
@@ -406,7 +447,8 @@ def main():
         server.serve_forever()
     except KeyboardInterrupt:
         print("\n已停止")
-        server.shutdown()
+    finally:
+        server.server_close()
 
 
 if __name__ == "__main__":

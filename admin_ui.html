@@ -57,6 +57,16 @@
   .hint{font-size:12px;color:var(--dim);margin-top:6px;line-height:1.6}
   .kv{font-size:12.5px;color:var(--dim);margin:4px 0}
   .kv b{color:var(--gold-soft);font-weight:600}
+  .imgcards{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-bottom:8px}
+  .imgcard{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:12px}
+  .imgcard .prev{height:120px;border-radius:8px;background:#0b0704 center/contain no-repeat;border:1px solid var(--line);margin-bottom:10px}
+  .imgcard .nm{font-size:13px;color:var(--gold-soft);margin-bottom:8px;letter-spacing:1px}
+  .swatches{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+  .sw{display:flex;align-items:center;gap:10px;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:9px 12px}
+  .sw input[type=color]{width:44px;height:34px;flex:none;padding:0;border:1px solid var(--line);border-radius:6px;background:var(--panel2);cursor:pointer}
+  .sw .lb{flex:1;font-size:13px;color:var(--text)}
+  .sw .hx{width:86px;flex:none;font-family:Consolas,monospace;font-size:12px;text-transform:lowercase}
+  .presets{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
 </style>
 </head>
 <body>
@@ -75,6 +85,7 @@
     <div class="tab active" data-tab="cat">栏目管理</div>
     <div class="tab" data-tab="post">文章管理</div>
     <div class="tab" data-tab="home">首页台词</div>
+    <div class="tab" data-tab="appearance">外观设置</div>
     <div class="tab" data-tab="preview">站点预览</div>
     <div class="tab" data-tab="git">GitHub 同步</div>
   </div>
@@ -169,6 +180,23 @@
     <div id="homeMsg"></div>
   </div>
 
+  <!-- 外观设置 -->
+  <div class="panel" id="tab-appearance">
+    <div class="sec-title">图片（背景 / 人物 / 站点图标）</div>
+    <div class="hint" style="margin-bottom:12px">仅支持 PNG。上传后立即生效，刷新预览即可看到；旧文件会自动备份为 .bak。</div>
+    <div class="imgcards" id="imgCards"></div>
+    <div id="imgMsg"></div>
+    <div class="sec-title" style="margin-top:22px">主题色（界面配色）</div>
+    <div class="presets" id="themePresets"></div>
+    <div class="swatches" id="themeSwatches"></div>
+    <div style="display:flex;gap:10px;margin-top:16px">
+      <button class="btn primary" id="saveThemeBtn">保存主题并重新生成</button>
+      <button class="btn" id="resetThemeBtn">恢复默认金色</button>
+    </div>
+    <div id="themeMsg"></div>
+    <div class="hint" style="margin-top:10px">「主金色」会自动派生出菜单/边框/悬浮等所有半透明金色组件；保存后全站（含子页面）即时生效。</div>
+  </div>
+
   <!-- 站点预览 -->
   <div class="panel" id="tab-preview">
     <div class="toolbar">
@@ -228,7 +256,7 @@ async function api(method, path, body){
 
 async function load(){
   STATE = await api("GET","/api/state");
-  renderCards(); renderCatList(); renderPostList(); renderHome(); renderGit();
+  renderCards(); renderCatList(); renderPostList(); renderHome(); renderAppearance(); renderGit();
   const badge = $("gitBadge");
   const g = STATE.git||{};
   if(!g.initialized || !g.remote){ badge.className="git-badge off"; badge.textContent="Git：未配置"; }
@@ -342,6 +370,100 @@ async function saveHome(){
   if(r.ok) await load();
 }
 
+/* ---------- 外观：图片与主题 ---------- */
+const THEME_KEYS = [
+  ["gold","主金色（菜单/标题/描边）"],
+  ["gold_soft","亮金（悬浮高亮）"],
+  ["gold_dim","暗金（次级装饰）"],
+  ["text_dim","次级文字"],
+  ["bg","页面背景 · 外圈"],
+  ["bg_center","页面背景 · 中心"],
+  ["text","对话框文字"],
+  ["link","链接颜色"],
+  ["link_hover","链接悬浮色"],
+];
+const THEME_FALLBACK = {gold:"#e6c583",gold_soft:"#f0d9a8",gold_dim:"#b8934f",text_dim:"#c9b394",bg:"#070503",bg_center:"#16100b",text:"#f5ead2",link:"#ffd98a",link_hover:"#fff0c8"};
+const THEME_PRESETS = {
+  "默认金":THEME_FALLBACK,
+  "幽蓝夜":{gold:"#7fb3e8",gold_soft:"#b8d8f5",gold_dim:"#4a7ba8",text_dim:"#8aa3bd",bg:"#03070c",bg_center:"#0a1420",text:"#dce8f5",link:"#9ecdf5",link_hover:"#d0e8ff"},
+  "绯红夜":{gold:"#e8907f",gold_soft:"#f5c0b0",gold_dim:"#a84a3f",text_dim:"#bd8a80",bg:"#0c0303",bg_center:"#200a08",text:"#f5dcd8",link:"#f5a898",link_hover:"#ffd0c0"},
+  "墨绿夜":{gold:"#8fc99a",gold_soft:"#c0e8c8",gold_dim:"#4a8a5a",text_dim:"#8aa895",bg:"#030c05",bg_center:"#0a2010",text:"#dcf5e2",link:"#a0d8ac",link_hover:"#c8f0d0"},
+  "暗紫夜":{gold:"#b893d6",gold_soft:"#dcc0ee",gold_dim:"#6a4a8a",text_dim:"#9a85b3",bg:"#07030c",bg_center:"#140a20",text:"#e8dcf5",link:"#c8a0e8",link_hover:"#e0c8ff"},
+};
+const IMG_SLOTS = [
+  ["背景.png","背景图（酒馆全景）"],
+  ["丝西娜.png","人物立绘（透明底）"],
+  ["favicon.png","站点图标"],
+];
+function currentTheme(){
+  const t = (STATE.site && STATE.site.theme) || {};
+  const out = {};
+  THEME_KEYS.forEach(([k])=>{ out[k] = t[k] || THEME_FALLBACK[k]; });
+  return out;
+}
+function renderAppearance(){
+  $("imgCards").innerHTML = IMG_SLOTS.map(([name,desc])=>`
+    <div class="imgcard">
+      <div class="prev" id="prev_${name.replace(".","_")}" style="background-image:url('/site/assets/img/${name}?t='+Date.now())"></div>
+      <div class="nm">${desc}</div>
+      <input type="file" id="file_${name.replace(".","_")}" accept="image/png" style="display:none">
+      <div style="display:flex;gap:8px">
+        <button class="btn sm" onclick="$('file_${name.replace(".","_")}').click()">选择 PNG</button>
+        <button class="btn sm primary" onclick="uploadImage('${name}','file_${name.replace(".","_")}')">上传</button>
+      </div>
+    </div>`).join("");
+  $("themePresets").innerHTML = Object.keys(THEME_PRESETS).map(n=>
+    `<button class="btn sm" onclick='applyPreset(${JSON.stringify(n)})'>${n}</button>`).join("");
+  $("themeSwatches").innerHTML = THEME_KEYS.map(([k,lb])=>`
+    <div class="sw">
+      <input type="color" id="th_${k}" value="${currentTheme()[k]}" oninput="$('hx_${k}').value=this.value">
+      <span class="lb">${lb}</span>
+      <input class="hx" id="hx_${k}" value="${currentTheme()[k]}" oninput="syncSwatch('${k}',this.value)">
+    </div>`).join("");
+}
+function syncSwatch(k,v){
+  if(/^#?[0-9a-fA-F]{3,6}$/.test(v.trim())){
+    $("th_"+k).value = v.trim().startsWith("#")? v.trim() : "#"+v.trim();
+  }
+}
+function applyPreset(name){
+  const p = THEME_PRESETS[name]; if(!p) return;
+  THEME_KEYS.forEach(([k])=>{ $("th_"+k).value = p[k]; $("hx_"+k).value = p[k]; });
+  showMsg("themeMsg", "已选择预设「"+name+"」，点「保存主题并重新生成」生效","ok");
+}
+function resetTheme(){ applyPreset("默认金"); }
+function readFileAsDataURL(file){
+  return new Promise((resolve,reject)=>{
+    const r = new FileReader();
+    r.onload = ()=>resolve(r.result);
+    r.onerror = ()=>reject(new Error("读取失败"));
+    r.readAsDataURL(file);
+  });
+}
+async function uploadImage(name, inputId){
+  const f = $(inputId).files[0];
+  if(!f) return showMsg("imgMsg","请先点击「选择 PNG」挑选图片","err");
+  if(f.size > 12*1024*1024) return showMsg("imgMsg","图片超过 12MB 上限","err");
+  showMsg("imgMsg","正在上传 "+name+" …","ok");
+  let data;
+  try { data = await readFileAsDataURL(f); } catch(e){ return showMsg("imgMsg","文件读取失败","err"); }
+  const r = await api("POST","/api/upload-image",{name, data});
+  showMsg("imgMsg", r.ok? name+" 已更新 ✔（点预览页的「刷新预览」查看）":"上传失败："+(r.error||""), r.ok?"ok":"err");
+  if(r.ok) renderAppearance();
+}
+async function saveTheme(){
+  const theme = {};
+  THEME_KEYS.forEach(([k])=>{ theme[k] = $("th_"+k).value; });
+  const site = Object.assign({}, STATE.site||{}, {theme});
+  const r = await api("POST","/api/site",{site});
+  if(!r.ok){ return showMsg("themeMsg","保存失败："+(r.error||""),"err"); }
+  showMsg("themeMsg","主题已保存，正在重新生成站点…","ok");
+  const rb = await api("POST","/api/rebuild");
+  showMsg("themeMsg", rb.ok? "主题已应用 ✔ 全站生效":"已保存，但生成失败："+(rb.message||rb.error||""), rb.ok?"ok":"err");
+  await load();
+  if(rb.ok && $("tab-preview").classList.contains("active")) refreshPrev();
+}
+
 /* ---------- 预览 ---------- */
 async function rebuild(){
   $("rebuildMsg").innerHTML = `<div class="hint">正在生成…</div>`;
@@ -412,6 +534,8 @@ $("savePostBtn").onclick = savePost;
 $("resetPostBtn").onclick = resetPost;
 $("postFilter").onchange = renderPostList;
 $("saveHomeBtn").onclick = saveHome;
+$("saveThemeBtn").onclick = saveTheme;
+$("resetThemeBtn").onclick = resetTheme;
 $("rebuildBtn").onclick = rebuild;
 $("refreshPrevBtn").onclick = refreshPrev;
 $("saveGitCfgBtn").onclick = saveGitCfg;

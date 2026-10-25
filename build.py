@@ -31,8 +31,21 @@ import sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 
 # ---------------------------------------------------------------- 默认内容
+DEFAULT_THEME = {
+    "gold": "#e6c583",        # 主金色（菜单/标题/描边）
+    "gold_soft": "#f0d9a8",   # 亮金（悬浮高亮）
+    "gold_dim": "#b8934f",    # 暗金（次级装饰）
+    "text_dim": "#c9b394",    # 次级文字
+    "bg": "#070503",          # 页面背景（外圈）
+    "bg_center": "#16100b",   # 页面背景（中心）
+    "text": "#f5ead2",        # 对话框文字
+    "link": "#ffd98a",        # 链接颜色
+    "link_hover": "#fff0c8",  # 链接悬浮色
+}
+
+
 DEFAULT_DATA = {
-    "site": {"title": "丝西娜的酒馆", "owner": "丝西娜"},
+    "site": {"title": "丝西娜的酒馆", "owner": "丝西娜", "theme": dict(DEFAULT_THEME)},
     "home_lines": [
         "（门上的铜铃响了一声）欢迎，远道而来的旅人。",
         "这里是丝西娜的酒馆。不卖故事，只卖酒，和一点点容身之处。",
@@ -131,19 +144,19 @@ DEFAULT_DATA = {
 CSS = r"""@charset "UTF-8";
 /* 丝西娜的酒馆 — 样式 */
 :root{
-  --gold:#e6c583;
-  --gold-soft:#f0d9a8;
-  --gold-dim:#b8934f;
+  --gold:__GOLD__;
+  --gold-soft:__GOLD_SOFT__;
+  --gold-dim:__GOLD_DIM__;
   --wood-edge:#6b4a2a;
   --panel:rgba(22,15,10,.92);
   --parchment:#f3e7cf;
-  --text-dim:#c9b394;
+  --text-dim:__TEXT_DIM__;
   --foot:#8d7654;
 }
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{height:100%;overflow:hidden}
-body{background:#070503;color:var(--parchment);font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;-webkit-font-smoothing:antialiased}
-#viewport{position:fixed;left:0;top:0;right:0;bottom:0;display:flex;align-items:center;justify-content:center;overflow:hidden;background:radial-gradient(ellipse at center,#16100b 0%,#070503 78%)}
+body{background:__BG__;color:var(--parchment);font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;-webkit-font-smoothing:antialiased}
+#viewport{position:fixed;left:0;top:0;right:0;bottom:0;display:flex;align-items:center;justify-content:center;overflow:hidden;background:radial-gradient(ellipse at center,__BG_CENTER__ 0%,__BG__ 78%)}
 .stage{position:relative;width:1280px;height:800px;flex:none;overflow:hidden;transform-origin:center center;box-shadow:0 0 90px rgba(0,0,0,.95),0 0 0 1px #241812}
 
 /* ---- 场景 ---- */
@@ -174,14 +187,14 @@ body{background:#070503;color:var(--parchment);font-family:"PingFang SC","Hiragi
 
 /* ---- 游戏菜单 ---- */
 .game-menu{position:absolute;right:36px;top:120px;width:214px;padding:14px 12px 12px;z-index:7;border:2px solid var(--wood-edge);border-radius:12px;background:var(--panel);box-shadow:0 12px 32px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,220,160,.14)}
-.menu-title{font-size:12px;letter-spacing:6px;color:var(--gold-dim);text-align:center;padding-bottom:10px;margin-bottom:6px;border-bottom:1px solid rgba(230,197,131,.25)}
+.menu-title{font-size:12px;letter-spacing:6px;color:var(--gold-dim);text-align:center;padding-bottom:10px;margin-bottom:6px;border-bottom:1px solid rgba(__GOLD_RGB__,.25)}
 .menu-item{position:relative;display:flex;align-items:center;gap:10px;margin:5px 0;padding:11px 12px;border:1px solid transparent;border-radius:8px;color:var(--parchment);text-decoration:none;font-size:17px;letter-spacing:3px;transition:background .15s,border-color .15s,transform .15s,color .15s}
 .menu-item .ico{width:22px;height:22px;flex:none}
 .menu-item::before{content:"▶";position:absolute;left:-13px;top:50%;transform:translate(4px,-50%);color:var(--gold);font-size:12px;opacity:0;transition:opacity .15s,transform .15s}
-.menu-item:hover,.menu-item:focus-visible{background:rgba(230,197,131,.12);border-color:rgba(230,197,131,.5);transform:translateX(3px);color:#ffe9bd;outline:none}
+.menu-item:hover,.menu-item:focus-visible{background:rgba(__GOLD_RGB__,.12);border-color:rgba(__GOLD_RGB__,.5);transform:translateX(3px);color:#ffe9bd;outline:none}
 .menu-item:hover::before,.menu-item.active::before{opacity:1;transform:translate(0,-50%)}
-.menu-item.active{background:rgba(230,197,131,.16);border-color:rgba(230,197,131,.55);color:#ffe9bd}
-.menu-foot{margin-top:10px;padding-top:8px;border-top:1px solid rgba(230,197,131,.2);font-size:11px;letter-spacing:3px;color:var(--foot);text-align:center}
+.menu-item.active{background:rgba(__GOLD_RGB__,.16);border-color:rgba(__GOLD_RGB__,.55);color:#ffe9bd}
+.menu-foot{margin-top:10px;padding-top:8px;border-top:1px solid rgba(__GOLD_RGB__,.2);font-size:11px;letter-spacing:3px;color:var(--foot);text-align:center}
 
 /* ---- 对话框 ---- */
 .dialogue-box{position:absolute;left:50%;bottom:26px;transform:translateX(-50%);width:920px;min-height:164px;padding:22px 30px 32px;z-index:7;cursor:pointer;border:2px solid var(--wood-edge);border-radius:14px;background:linear-gradient(180deg,rgba(28,18,11,.94),rgba(15,9,5,.965));box-shadow:0 16px 44px rgba(0,0,0,.68),inset 0 1px 0 rgba(255,220,160,.16)}
@@ -189,10 +202,10 @@ body{background:#070503;color:var(--parchment);font-family:"PingFang SC","Hiragi
 .dialogue-box::before{left:6px;top:6px;border-right:none;border-bottom:none;border-radius:4px 0 0 0}
 .dialogue-box::after{right:6px;bottom:6px;border-left:none;border-top:none;border-radius:0 0 4px 0}
 .name-plate{position:absolute;top:-17px;left:24px;padding:4px 16px;border:1px solid var(--gold-dim);border-radius:6px;background:linear-gradient(180deg,#5a3d22,#3a2513);font-family:"KaiTi","STKaiti",serif;font-size:18px;font-weight:700;color:var(--gold);letter-spacing:4px;box-shadow:0 4px 12px rgba(0,0,0,.55)}
-.dialogue-text{min-height:92px;font-family:"KaiTi","STKaiti","Kaiti SC",serif;font-size:21px;line-height:1.9;letter-spacing:1px;color:#f5ead2;text-shadow:0 1px 3px rgba(0,0,0,.65)}
+.dialogue-text{min-height:92px;font-family:"KaiTi","STKaiti","Kaiti SC",serif;font-size:21px;line-height:1.9;letter-spacing:1px;color:__TEXT__;text-shadow:0 1px 3px rgba(0,0,0,.65)}
 .dialogue-text.typing::after{content:"▌";color:var(--gold);animation:blink .8s steps(1) infinite}
-.dialogue-text a{color:#ffd98a;text-decoration:underline;text-underline-offset:3px;text-shadow:none;font-weight:600;cursor:pointer}
-.dialogue-text a:hover{color:#fff0c8}
+.dialogue-text a{color:__LINK__;text-decoration:underline;text-underline-offset:3px;text-shadow:none;font-weight:600;cursor:pointer}
+.dialogue-text a:hover{color:__LINK_HOVER__}
 .dialogue-text a:active{color:#ffbf66}
 @keyframes blink{50%{opacity:0}}
 .dialogue-next{position:absolute;right:20px;bottom:12px;color:var(--gold);font-size:14px;opacity:0;transition:opacity .2s;pointer-events:none}
@@ -202,19 +215,19 @@ body{background:#070503;color:var(--parchment);font-family:"PingFang SC","Hiragi
 /* ---- 手记列表 / 文章头 ---- */
 .post-list,.post-header{position:absolute;left:36px;top:120px;width:340px;z-index:7;padding:14px;border:2px solid var(--wood-edge);border-radius:12px;background:var(--panel);box-shadow:0 12px 32px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,220,160,.14)}
 .post-list{max-height:440px;overflow:auto}
-.list-head{display:flex;align-items:baseline;justify-content:space-between;padding-bottom:10px;margin-bottom:4px;border-bottom:1px solid rgba(230,197,131,.25)}
+.list-head{display:flex;align-items:baseline;justify-content:space-between;padding-bottom:10px;margin-bottom:4px;border-bottom:1px solid rgba(__GOLD_RGB__,.25)}
 .list-title{font-family:"KaiTi","STKaiti",serif;font-size:19px;font-weight:700;color:var(--gold);letter-spacing:2px}
 .list-count{font-size:12px;color:var(--foot)}
 .list-desc{font-size:12px;color:var(--text-dim);letter-spacing:1px;padding:6px 2px 10px}
-.post-item{display:block;margin-bottom:8px;padding:10px 12px;border:1px solid rgba(230,197,131,.18);border-radius:8px;background:rgba(255,240,210,.03);text-decoration:none;transition:border-color .15s,background .15s,transform .15s}
-.post-item:hover{border-color:var(--gold);background:rgba(230,197,131,.1);transform:translateX(3px)}
+.post-item{display:block;margin-bottom:8px;padding:10px 12px;border:1px solid rgba(__GOLD_RGB__,.18);border-radius:8px;background:rgba(255,240,210,.03);text-decoration:none;transition:border-color .15s,background .15s,transform .15s}
+.post-item:hover{border-color:var(--gold);background:rgba(__GOLD_RGB__,.1);transform:translateX(3px)}
 .post-date{display:block;margin-bottom:3px;font-size:11px;letter-spacing:2px;color:#9c8560}
 .post-title{display:block;font-size:15px;line-height:1.55;color:#f0e2c6}
 .post-list::-webkit-scrollbar{width:6px}
-.post-list::-webkit-scrollbar-thumb{background:rgba(230,197,131,.35);border-radius:3px}
+.post-list::-webkit-scrollbar-thumb{background:rgba(__GOLD_RGB__,.35);border-radius:3px}
 .post-list::-webkit-scrollbar-track{background:transparent}
-.back-btn{display:inline-flex;align-items:center;gap:6px;margin-bottom:12px;padding:5px 14px;border:1px solid rgba(230,197,131,.4);border-radius:6px;color:var(--gold-soft);text-decoration:none;font-size:13px;letter-spacing:2px;background:rgba(22,15,10,.6);transition:color .15s,border-color .15s,background .15s}
-.back-btn:hover{color:#ffe9bd;border-color:var(--gold);background:rgba(230,197,131,.14)}
+.back-btn{display:inline-flex;align-items:center;gap:6px;margin-bottom:12px;padding:5px 14px;border:1px solid rgba(__GOLD_RGB__,.4);border-radius:6px;color:var(--gold-soft);text-decoration:none;font-size:13px;letter-spacing:2px;background:rgba(22,15,10,.6);transition:color .15s,border-color .15s,background .15s}
+.back-btn:hover{color:#ffe9bd;border-color:var(--gold);background:rgba(__GOLD_RGB__,.14)}
 .post-meta{margin-bottom:4px;font-size:12px;letter-spacing:3px;color:#9c8560}
 .post-title-h{font-family:"KaiTi","STKaiti",serif;font-size:24px;font-weight:700;line-height:1.45;letter-spacing:1px;color:var(--gold);text-shadow:0 2px 10px rgba(0,0,0,.8)}
 
@@ -250,6 +263,47 @@ body{background:#070503;color:var(--parchment);font-family:"PingFang SC","Hiragi
 .stage.mobile .name-plate{font-size:15px;left:16px;padding:3px 12px;top:-14px}
 .stage.mobile .stage-foot{display:none}
 """
+
+
+# ---------------------------------------------------------------- 主题
+
+
+def hex_to_rgb(h):
+    h = str(h).strip().lstrip("#")
+    if len(h) == 3:
+        h = "".join(c * 2 for c in h)
+    if len(h) != 6:
+        return None
+    try:
+        return int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
+    except ValueError:
+        return None
+
+
+def theme_css(theme):
+    """把 CSS 模板中的颜色占位符替换为用户主题；缺省/非法值回退默认主题。"""
+    t = dict(DEFAULT_THEME)
+    for k, v in (theme or {}).items():
+        if k not in t:
+            continue
+        v = str(v).strip()
+        if v and not v.startswith("#"):
+            v = "#" + v
+        if hex_to_rgb(v) is not None:
+            t[k] = v
+    gold_rgb = hex_to_rgb(t["gold"])
+    css = (CSS
+           .replace("__GOLD__", t["gold"])
+           .replace("__GOLD_SOFT__", t["gold_soft"])
+           .replace("__GOLD_DIM__", t["gold_dim"])
+           .replace("__TEXT_DIM__", t["text_dim"])
+           .replace("__BG__", t["bg"])
+           .replace("__BG_CENTER__", t["bg_center"])
+           .replace("__TEXT__", t["text"])
+           .replace("__LINK__", t["link"])
+           .replace("__LINK_HOVER__", t["link_hover"])
+           .replace("__GOLD_RGB__", "%d,%d,%d" % gold_rgb))
+    return css
 
 # ---------------------------------------------------------------- 脚本
 JS = r"""(function () {
@@ -648,7 +702,7 @@ def main():
     data = load_data(out)
     cats = data["categories"]
 
-    w(os.path.join(out, "assets", "css", "style.css"), CSS)
+    w(os.path.join(out, "assets", "css", "style.css"), theme_css(data.get("site", {}).get("theme")))
     w(os.path.join(out, "assets", "js", "app.js"), JS)
     w(os.path.join(out, "posts.json"), json.dumps(data, ensure_ascii=False, indent=2) + "\n")
     w(os.path.join(out, "README.md"), README)
