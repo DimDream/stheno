@@ -27,6 +27,7 @@ import subprocess
 import sys
 import time
 import base64
+import socket
 import mimetypes
 import urllib.parse
 from http.server import BaseHTTPRequestHandler, HTTPServer, ThreadingHTTPServer
@@ -431,6 +432,30 @@ class Handler(BaseHTTPRequestHandler):
         return self._send(404, {"ok": False, "error": "not found"})
 
 
+def _port_in_use(port):
+    """探测端口是否已有监听。
+    返回 True = 确认被占用（含僵死实例）；False = 空闲；
+    None = 本机网络探测失败（无法确认），此时绝不能误判为占用而拒绝启动。
+    """
+    for _attempt in range(3):
+        probe = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        probe.settimeout(2.0)
+        try:
+            probe.connect(("127.0.0.1", port))
+            return True
+        except ConnectionRefusedError:
+            return False
+        except socket.timeout:
+            pass
+        except OSError:
+            pass
+        finally:
+            probe.close()
+        if _attempt < 2:
+            time.sleep(0.5)
+    return None
+
+
 def main():
     port = DEFAULT_PORT
     if len(sys.argv) > 1:
@@ -438,6 +463,14 @@ def main():
             port = int(sys.argv[1])
         except ValueError:
             pass
+    in_use = _port_in_use(port)
+    if in_use:
+        print("启动失败：端口 %d 上已有管理后台在运行。" % port)
+        print("  请勿重复启动。若页面无响应，先结束旧 python.exe 进程再启动。")
+        print("  或直接访问已在运行的实例： http://localhost:%d" % port)
+        sys.exit(1)
+    if in_use is None:
+        print("警告：无法确认端口 %d 是否被占用（本机探测失败），继续尝试启动……" % port)
     server = ThreadingHTTPServer(("127.0.0.1", port), Handler)
     print("丝西娜的酒馆 · 管理后台已启动")
     print("  浏览器打开： http://localhost:%d" % port)
